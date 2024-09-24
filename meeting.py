@@ -4,11 +4,6 @@ import requests.auth
 import os
 from dotenv import load_dotenv
 
-def notification_check(title, message):
-    notify2.init("Notification")
-    notification = notify2.Notification(title, message)
-    notification.show()
-
 def fetchMeetingsAndSendToMatrix():
     auth_username= os.getenv("OPENPROJECT_USERNAME", "admin")
     auth_password = os.getenv("OPENPROJECT_PASSWORD", "admin")
