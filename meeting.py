@@ -6,7 +6,7 @@ from datetime import datetime
 
 OPENPROJECT_PROJECT_NAME='Nextcloud App "OpenProject Integration"'
 OPENPROJECT_MEETING_LINK = "https://meet.openproject.org/b/storages"
-MEETING_TIME_START = "13:06"
+MEETING_TIME_START = "13:45"
 
 # Load environment variables from .env file
 load_dotenv()
