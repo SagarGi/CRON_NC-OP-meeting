@@ -33,7 +33,6 @@ def makeHttpRequest(url, method, requestTo, data=None):
             response = requests.get(url, auth=requests.auth.HTTPBasicAuth('apikey', user_access_token))
             return response
         elif method == "POST" and requestTo == "matrix":
-            print("Sending chat to element chat!")
             response = requests.post(url, json=data)
             return response
     except requests.exceptions.RequestException as req_err:
@@ -62,12 +61,10 @@ def fetchOpenProjectMeetingsDetails():
     no_of_meetings = len(our_meetings)
     meeting_details = {}
     if no_of_meetings == 0:
-        print("No meeting has been scheduled!")
         meeting_details["number"] = 0
         return meeting_details
     
     if no_of_meetings == 1:
-        print("Only one meeting has been scheduled!")
         meeting_id = our_meetings[0]["id"]
         # select and pass only required meeting details
         meeting_identifier = getMeetingIdentifier(meeting_id)
@@ -77,7 +74,6 @@ def fetchOpenProjectMeetingsDetails():
         return meeting_details
     
     if no_of_meetings > 1:
-        print("More than one meeting has been scheduled!")
         meeting_id = our_meetings[0]["id"]
         meeting_identifier = getMeetingIdentifier(meeting_id)
         # here 2 signifies that more than one meeting has been scheduled
@@ -107,8 +103,7 @@ def sendMeetingDetailsToOpenProjectNextcloudMatrix():
     element_bot_access_token = getElementBotAccessToken()
 
     if element_url == "" or element_room_id == "" or element_bot_access_token == "":
-        print("Element chat details are not provided!")
-        return
+        raise Exception("Element chat url, room id or bot access token is not provided!")
     
     element_chat_full_url = f"{element_url}/_matrix/client/r0/rooms/!{element_room_id}:matrix.org/send/m.room.message?access_token={element_bot_access_token}"
     meeting_information = getMeetingAgendaLink()
