@@ -2,9 +2,11 @@ import requests
 import requests.auth
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 
 OPENPROJECT_PROJECT_NAME='Nextcloud App "OpenProject Integration"'
 OPENPROJECT_MEETING_LINK = "https://meet.openproject.org/b/storages"
+MEETING_TIME_START = "13:45"
 
 # Load environment variables from .env file
 load_dotenv()
@@ -81,9 +83,14 @@ def fetchOpenProjectMeetingsDetails():
         meeting_details["identifier"] = meeting_identifier 
         return meeting_details
     
-
-def getMeetingAgendaLink():
+def isMeetingScheduled():
     meetings_details = fetchOpenProjectMeetingsDetails()
+    if meetings_details["number"] == 1 or meetings_details["number"] == 2:
+        return True
+    return False
+    
+
+def getMeetingAgendaLink(meetings_details):
     no_of_meetings = meetings_details["number"]
     
     if no_of_meetings == 1:
@@ -95,6 +102,11 @@ def getMeetingAgendaLink():
         return f"<p>Agendas for multiple meetings: <i>{getOpenProjectUrl()}/projects/{meeting_identifier}/meetings</i></p> <p>Join the meeting at:  <i><a href='{OPENPROJECT_MEETING_LINK}'>{OPENPROJECT_MEETING_LINK}</i></p>"
     else:
         return "No meetings have been scheduled for the week. Have a great day :)"
+    
+def getCurrentTimeInHourAndMinute():
+    current_time = datetime.now()
+    hour_minute_time = current_time.strftime("%H:%M")
+    return hour_minute_time
 
     
 def sendMeetingDetailsToOpenProjectNextcloudMatrix():
@@ -106,18 +118,23 @@ def sendMeetingDetailsToOpenProjectNextcloudMatrix():
         raise Exception("Element chat url, room id or bot access token is not provided!")
     
     element_chat_full_url = f"{element_url}/_matrix/client/r0/rooms/!{element_room_id}:matrix.org/send/m.room.message?access_token={element_bot_access_token}"
-    meeting_information = getMeetingAgendaLink()
+    meeting_details = fetchOpenProjectMeetingsDetails()
     data = {
         "msgtype": "m.text",
         "body": "",
         "format": "org.matrix.custom.html",
-        "formatted_body": f"<b><p>Integration OpenProject Weekly Meeting:</p></b>{meeting_information}</p>"
+        "formatted_body": f"<b><p>Integration OpenProject Weekly Meeting:</p></b>{getMeetingAgendaLink(meeting_details)}</p>"
     }
-    response_send_chat_to_element = makeHttpRequest(element_chat_full_url, "POST", "matrix", data)
-    if response_send_chat_to_element.status_code != 200:
-        raise Exception("Failed to send chat to element chat. Status code: " + str(response_send_chat_to_element.status_code))
-    
-    print("Chat sent to element chat successfully!")
+    send_chat = True
+    if getCurrentTimeInHourAndMinute() < MEETING_TIME_START:
+        # we check if there is a meeting scheduled for the day
+        if meeting_details['number'] == 0:
+            send_chat = False
 
+    if send_chat:
+        response_send_chat_to_element = makeHttpRequest(element_chat_full_url, "POST", "matrix", data)
+        if response_send_chat_to_element.status_code != 200:
+            raise Exception("Failed to send chat to element chat. Status code: " + str(response_send_chat_to_element.status_code))
+        print("Chat sent to element chat successfully!")
 
 sendMeetingDetailsToOpenProjectNextcloudMatrix()
