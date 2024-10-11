@@ -4,8 +4,6 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
-OPENPROJECT_PROJECT_NAME='Nextcloud App "OpenProject Integration"'
-OPENPROJECT_MEETING_LINK = "https://meet.openproject.org/b/storages"
 MEETING_TIME_START = "13:45"
 
 # Load environment variables from .env file
@@ -25,6 +23,12 @@ def getElementBotAccessToken():
 
 def getOpenProjectUserAccessToken():
     return os.getenv("OPENPROJECT_USER_ACCESS_TOKEN", "")
+
+def getOpenProjectProjectName():
+    return os.getenv("OPENPROJECT_PROJECT_NAME", "")
+
+def getOpenProjectMeetingLink():
+    return os.getenv("OPENPROJECT_MEETING_LINK", "")
 
 def makeHttpRequest(url, method, requestTo, data=None):
     try:
@@ -57,7 +61,7 @@ def fetchOpenProjectMeetingsDetails():
     # get only the meetings with title having 'Nextcloud App "OpenProject Integration"'
     our_meetings = [
         element for element in meetings_json["_embedded"]["elements"]
-        if element["_links"]["project"]["title"] == OPENPROJECT_PROJECT_NAME
+        if element["_links"]["project"]["title"] == getOpenProjectProjectName()
     ]
 
     no_of_meetings = len(our_meetings)
@@ -96,10 +100,10 @@ def getMeetingAgendaLink(meetings_details):
     if no_of_meetings == 1:
         meeting_id = meetings_details["id"]
         meeting_identifier = meetings_details["identifier"]
-        return f"<p>Agendas for today's meeting: <i>{getOpenProjectUrl()}/projects/{meeting_identifier}/meetings/{meeting_id}</i></p> <p>Join the meeting at:  <i><a href='{OPENPROJECT_MEETING_LINK}'>{OPENPROJECT_MEETING_LINK}</i></p>"
+        return f"<p>Agendas for today's meeting: <i>{getOpenProjectUrl()}/projects/{meeting_identifier}/meetings/{meeting_id}</i></p> <p>Join the meeting at:  <i><a href='{getOpenProjectMeetingLink()}'>{getOpenProjectMeetingLink()}</i></p>"
     elif no_of_meetings == 2:
         meeting_identifier = meetings_details["identifier"]
-        return f"<p>Agendas for multiple meetings: <i>{getOpenProjectUrl()}/projects/{meeting_identifier}/meetings</i></p> <p>Join the meeting at:  <i><a href='{OPENPROJECT_MEETING_LINK}'>{OPENPROJECT_MEETING_LINK}</i></p>"
+        return f"<p>Agendas for multiple meetings: <i>{getOpenProjectUrl()}/projects/{meeting_identifier}/meetings</i></p> <p>Join the meeting at:  <i><a href='{getOpenProjectMeetingLink()}'>{getOpenProjectMeetingLink()}</i></p>"
     else:
         return "No meetings have been scheduled for the week. Have a great day :)"
     
