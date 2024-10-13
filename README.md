@@ -25,6 +25,13 @@ pip3 install -r requirements.txt
 apt-get install cron
 ```
 
+### 4. Set environment variables
+
+```bash
+cp .env.example .env
+# All ENV's needs to be set accordingly
+```
+
 ### 4. Set cron job locally
 
 ```bash
