@@ -6,7 +6,9 @@ from datetime import datetime
 import json
 
 MEETING_TIME_START = "13:45"
-TEMP_JSON_FILE_NAME = "meeting_agenda_state.json"
+TEMP_FILE_FOR_MEETING_AGENDA_STATE = "meeting_agenda_state.json"
+OPENPROJECT_SERVER_ID = "openproject"
+MATRIX_SERVER_ID = "matrix"
 
 def getOpenProjectUrl():
     return os.getenv("OPENPROJECT_HOST_URL", "http://localhost:3000")
@@ -30,7 +32,7 @@ def getOpenProjectMeetingLink():
     return os.getenv("OPENPROJECT_MEETING_LINK", "")
 
 def getTempJsonFilePath():
-    return os.path.join(os.path.dirname(__file__), TEMP_JSON_FILE_NAME)
+    return os.path.join(os.path.dirname(__file__), TEMP_FILE_FOR_MEETING_AGENDA_STATE)
 
 def createMeetingAgendaSentStateFile():
     data = {"delivered": False}
@@ -55,13 +57,13 @@ def getMeetingAgendaStateDelivered():
 
 def makeHttpRequest(url, method, requestTo, data=None):
     try:
-        if method == "GET" and requestTo == "openproject":
+        if method == "GET" and requestTo == OPENPROJECT_SERVER_ID:
             user_access_token = getOpenProjectUserAccessToken()
             if user_access_token == "":
                 raise Exception("OpenProject user access token is not provided!")
             response = requests.get(url, auth=requests.auth.HTTPBasicAuth('apikey', user_access_token))
             return response
-        elif method == "POST" and requestTo == "matrix":
+        elif method == "POST" and requestTo == MATRIX_SERVER_ID:
             response = requests.post(url, json=data)
             return response
     except requests.exceptions.RequestException as req_err:
@@ -69,14 +71,14 @@ def makeHttpRequest(url, method, requestTo, data=None):
         return None
     
 def getMeetingIdentifier(meeting_id):
-    response_meetings_details = makeHttpRequest(f"{getOpenProjectUrl()}/api/v3/meetings/{meeting_id}", "GET", "openproject")
+    response_meetings_details = makeHttpRequest(f"{getOpenProjectUrl()}/api/v3/meetings/{meeting_id}", "GET", OPENPROJECT_SERVER_ID)
     response_meetings_details_json =  response_meetings_details.json()
     return response_meetings_details_json["_embedded"]["project"]["identifier"]
 
 
 def fetchOpenProjectMeetingsDetails():
     meetings_url = f"{getOpenProjectUrl()}/api/v3/meetings"
-    response_meetings = makeHttpRequest(meetings_url, "GET", "openproject")
+    response_meetings = makeHttpRequest(meetings_url, "GET", OPENPROJECT_SERVER_ID)
     if response_meetings.status_code != 200:
         raise Exception("Failed to fetch meetings. Status code: " + str(response_meetings.status_code))
     
@@ -109,12 +111,6 @@ def fetchOpenProjectMeetingsDetails():
         meeting_details["number"] = 2
         meeting_details["identifier"] = meeting_identifier 
         return meeting_details
-    
-def isMeetingScheduled():
-    meetings_details = fetchOpenProjectMeetingsDetails()
-    if meetings_details["number"] == 1 or meetings_details["number"] == 2:
-        return True
-    return False
     
 
 def getMeetingAgendaLink(meetings_details):
@@ -160,7 +156,7 @@ def sendMeetingDetailsToOpenProjectNextcloudMatrix():
             send_chat = False
 
     if send_chat and getMeetingAgendaStateDelivered() == False:
-        response_send_chat_to_element = makeHttpRequest(element_chat_full_url, "POST", "matrix", data)
+        response_send_chat_to_element = makeHttpRequest(element_chat_full_url, "POST", MATRIX_SERVER_ID, data)
         if response_send_chat_to_element.status_code != 200:
             raise Exception("Failed to send chat to element chat. Status code: " + str(response_send_chat_to_element.status_code))
         setMeetingAgendaStateDelivered()
