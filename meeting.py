@@ -3,11 +3,10 @@ import requests.auth
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+import json
 
 MEETING_TIME_START = "13:45"
-
-# Load environment variables from .env file
-load_dotenv()
+TEMP_JSON_FILE_NAME = "meeting_agenda_state.json"
 
 def getOpenProjectUrl():
     return os.getenv("OPENPROJECT_HOST_URL", "http://localhost:3000")
@@ -29,6 +28,30 @@ def getOpenProjectProjectName():
 
 def getOpenProjectMeetingLink():
     return os.getenv("OPENPROJECT_MEETING_LINK", "")
+
+def getTempJsonFilePath():
+    return os.path.join(os.path.dirname(__file__), TEMP_JSON_FILE_NAME)
+
+def createMeetingAgendaSentStateFile():
+    data = {"delivered": False}
+    filename_path = getTempJsonFilePath()
+    if not os.path.exists(filename_path):
+        with open(filename_path, "w") as file:
+            json.dump(data, file)
+
+def setMeetingAgendaStateDelivered():
+    filename_path = getTempJsonFilePath()
+    with open(filename_path, "r") as file:
+        data = json.load(file)
+        data["delivered"] = True
+    with open(filename_path, "w") as file:
+        json.dump(data, file)
+
+def getMeetingAgendaStateDelivered():
+    filename_path = getTempJsonFilePath()
+    with open(filename_path, "r") as file:
+        data = json.load(file)
+        return data["delivered"]
 
 def makeHttpRequest(url, method, requestTo, data=None):
     try:
@@ -122,6 +145,7 @@ def sendMeetingDetailsToOpenProjectNextcloudMatrix():
         raise Exception("Element chat url, room id or bot access token is not provided!")
     
     element_chat_full_url = f"{element_url}/_matrix/client/r0/rooms/!{element_room_id}:matrix.org/send/m.room.message?access_token={element_bot_access_token}"
+    
     meeting_details = fetchOpenProjectMeetingsDetails()
     data = {
         "msgtype": "m.text",
@@ -130,15 +154,26 @@ def sendMeetingDetailsToOpenProjectNextcloudMatrix():
         "formatted_body": f"<b><p>Integration OpenProject Weekly Meeting:</p></b>{getMeetingAgendaLink(meeting_details)}</p>"
     }
     send_chat = True
-    if getCurrentTimeInHourAndMinute() < MEETING_TIME_START:
+    if getCurrentTimeInHourAndMinute() <= MEETING_TIME_START:
         # we check if there is a meeting scheduled for the day
         if meeting_details['number'] == 0:
             send_chat = False
 
-    if send_chat:
+    if send_chat and getMeetingAgendaStateDelivered() == False:
         response_send_chat_to_element = makeHttpRequest(element_chat_full_url, "POST", "matrix", data)
         if response_send_chat_to_element.status_code != 200:
             raise Exception("Failed to send chat to element chat. Status code: " + str(response_send_chat_to_element.status_code))
+        setMeetingAgendaStateDelivered()
         print("Chat sent to element chat successfully!")
 
+    # if the current time is greater than the meeting start time, then delete the temporary file
+    if getCurrentTimeInHourAndMinute() > MEETING_TIME_START:
+        if os.path.exists(getTempJsonFilePath()):
+            os.remove(getTempJsonFilePath())
+
+# Load environment variables from .env file
+load_dotenv()
+# first create the temporary file to store the state of the meeting agenda sent
+createMeetingAgendaSentStateFile()
+# send the meeting details to the openproject nextcloud matrix
 sendMeetingDetailsToOpenProjectNextcloudMatrix()
