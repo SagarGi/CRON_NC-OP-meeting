@@ -77,7 +77,9 @@ def getMeetingIdentifier(meeting_id):
 
 
 def fetchOpenProjectMeetingsDetails():
-    meetings_url = f"{getOpenProjectUrl()}/api/v3/meetings"
+    query_params = '[{"time":{"operator":"=","values":["future"]}}]'
+    meetings_url = f'{getOpenProjectUrl()}/api/v3/meetings?filters={query_params}'
+    print(meetings_url)
     response_meetings = makeHttpRequest(meetings_url, "GET", OPENPROJECT_SERVER_ID)
     if response_meetings.status_code != 200:
         raise Exception("Failed to fetch meetings. Status code: " + str(response_meetings.status_code))
