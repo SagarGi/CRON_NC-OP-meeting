@@ -142,7 +142,7 @@ def sendMeetingDetailsToOpenProjectNextcloudMatrix():
     if element_url == "" or element_room_id == "" or element_bot_access_token == "":
         raise Exception("Element chat url, room id or bot access token is not provided!")
     
-    element_chat_full_url = f"{element_url}/_matrix/client/r0/rooms/!{element_room_id}:matrix.org/send/m.room.message?access_token={element_bot_access_token}"
+    element_chat_full_url = f"{element_url}/_matrix/client/r0/rooms/!{element_room_id}/send/m.room.message?access_token={element_bot_access_token}"
     
     meeting_details = fetchOpenProjectMeetingsDetails()
     data = {
