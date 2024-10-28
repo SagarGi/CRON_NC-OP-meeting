@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import json
 
-MEETING_TIME_START = "13:45" #Time in Nepal
+MEETING_TIME_START = "14:45" #Time in Nepal
 TEMP_FILE_FOR_MEETING_AGENDA_STATE = "meeting_agenda_state.json"
 OPENPROJECT_SERVER_ID = "openproject"
 MATRIX_SERVER_ID = "matrix"
@@ -68,6 +68,8 @@ def makeHttpRequest(url, method, requestTo, data=None):
             return response
     except requests.exceptions.RequestException as req_err:
         print(f"Request error occurred: {req_err}")
+        if os.path.exists(getTempJsonFilePath()):
+            os.remove(getTempJsonFilePath())
         return None
     
 def getMeetingIdentifier(meeting_id):
