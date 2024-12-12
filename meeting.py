@@ -162,6 +162,8 @@ def sendMeetingDetailsToOpenProjectNextcloudMatrix():
     if send_chat and getMeetingAgendaStateDelivered() == False:
         response_send_chat_to_element = makeHttpRequest(element_chat_full_url, "POST", MATRIX_SERVER_ID, data)
         if response_send_chat_to_element.status_code != 200:
+            if os.path.exists(getTempJsonFilePath()):
+                os.remove(getTempJsonFilePath())
             raise Exception("Failed to send chat to element chat. Status code: " + str(response_send_chat_to_element.status_code))
         setMeetingAgendaStateDelivered()
         print("Chat sent to element chat successfully!")
